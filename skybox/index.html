@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Skybox</title>
+    <style>
+        body {
+			background-color: #f0f0f0;
+			margin: 0;
+			overflow: hidden;
+		}
+    </style>
+</head>
+<body>
+    <script src="js/Three.js" type="text/javascript"></script>
+    <script src="js/RequestAnimationFrame.js" type="text/javascript"></script>
+    <script src="js/Detector.js" type="text/javascript"></script>
+    <script src="js/Stats.js" type="text/javascript"></script>
+
+    <script>
+        // statics
+        var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+
+        var container, stats;
+
+        var scene, camera, renderer;
+        var skybox;
+        var controls;
+
+        init();
+        animate();
+
+        function init() {
+            // test for webgl
+            if ( ! Detector.webgl ) {
+                Detector.addGetWebGLMessage();
+                return;
+            }
+
+            // create the container
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            // create the scene
+            scene = new THREE.Scene();
+
+            // create the camera
+            camera = new THREE.PerspectiveCamera(70, SCREEN_WIDTH/SCREEN_HEIGHT, 1, 10000);
+            camera.position.z = 1;
+            scene.add(camera);
+
+            /********** start skybox **********/
+            // cube textures
+            var urlPrefix	= "images/";
+	        var urls = [ urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
+			             urlPrefix + "posy.jpg", urlPrefix + "negy.jpg",
+			             urlPrefix + "posz.jpg", urlPrefix + "negz.jpg" ];
+	        var textureCube	= THREE.ImageUtils.loadTextureCube(urls);
+
+            // shader
+            var shader	= THREE.ShaderUtils.lib["cube"];
+            shader.uniforms["tCube"].texture = textureCube;
+            var material = new THREE.ShaderMaterial({
+                fragmentShader	: shader.fragmentShader,
+                vertexShader	: shader.vertexShader,
+                uniforms	    : shader.uniforms
+            });
+
+            // create the cube
+            skybox = new THREE.Mesh(new THREE.CubeGeometry(200, 200, 200, 1, 1, 1, null), material);
+            skybox.doubleSided = true;
+            scene.add(skybox);
+            /********** end skybox **********/
+
+            // create the renderer
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+            container.appendChild(renderer.domElement);
+
+            // trackball controls
+            controls = new THREE.TrackballControls(camera, renderer.domElement);
+			controls.dynamicDampingFactor = 0.3;
+            controls.noPan = true;
+            controls.noZoom = true;
+
+            // create the profiler
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '0px';
+            container.appendChild(stats.domElement);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+            stats.update();
+        }
+
+        function render() {
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
